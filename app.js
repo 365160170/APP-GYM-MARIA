@@ -185,6 +185,29 @@ function goalProgress(goal, m) {
   return { current, target, pct };
 }
 
+/* ---------------- Autocompletado y última sesión ---------------- */
+// Nombres únicos de ejercicios en TODOS los meses (normalizados por frecuencia)
+function allExerciseNames() {
+  const count = {};
+  Object.values(db).forEach(m => (m.gym || []).forEach(w => (w.exercises || []).forEach(e => {
+    const n = (e.name || "").trim();
+    if (n) count[n] = (count[n] || 0) + 1;
+  })));
+  return Object.entries(count).sort((a, b) => b[1] - a[1]).map(([n]) => n);
+}
+// Última vez que se hizo un ejercicio (busca en todos los meses, más reciente primero)
+function lastSessionFor(name) {
+  const target = name.trim().toLowerCase();
+  if (!target) return null;
+  let best = null;
+  Object.values(db).forEach(m => (m.gym || []).forEach(w => (w.exercises || []).forEach(e => {
+    if ((e.name || "").trim().toLowerCase() === target && (e.sets || []).length) {
+      if (!best || w.date > best.date) best = { date: w.date, sets: e.sets, rpe: e.rpe };
+    }
+  })));
+  return best;
+}
+
 /* ---------------- Render principal ---------------- */
 function renderAll() {
   document.getElementById("monthLabel").textContent = monthLabel(currentKey);
@@ -375,7 +398,12 @@ function duplicateWorkout(id) {
   const copy = JSON.parse(JSON.stringify(src));
   copy.id = uid(); copy.date = todayISO(); copy.createdAt = nowISO(); copy.updatedAt = nowISO();
   copy.exercises.forEach(e => { e.id = uid(); e.pr = false; });
-  m.gym.push(copy); saveDB(); // Garantía: modal y toast siempre cerrados al iniciar
+  m.gym.push(copy); saveDB(); // PWA: registrar service worker (funciona offline e instalable en iPhone)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+
+// Garantía: modal y toast siempre cerrados al iniciar
 closeModal();
 document.getElementById("toast").style.display = "none";
 renderAll();
@@ -447,6 +475,7 @@ function renderWorkoutForm() {
         ${["Bajo", "Medio", "Alto"].map(e => `<button type="button" class="${d.energy === e ? "active" : ""}" data-v="${e}">${e}</button>`).join("")}
       </div>
     </div>
+    <datalist id="exerciseList">${allExerciseNames().map(n => `<option value="${esc(n)}">`).join("")}</datalist>
     <div id="w-exercises">${d.exercises.map((e, i) => exerciseFormBlock(e, i)).join("")}</div>
     <button class="link-btn" onclick="draftAddExercise()">+ Agregar ejercicio</button>
     <div class="form-group" style="margin-top:12px"><label>Notas del entrenamiento</label><textarea id="w-notes">${esc(d.notes)}</textarea></div>
@@ -473,11 +502,12 @@ function exerciseFormBlock(e, i) {
       <button class="link-btn red" onclick="draftRemoveExercise(${i})">Quitar</button>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Nombre</label><input type="text" class="ex-name-inp" value="${esc(e.name)}" placeholder="Press banca"></div>
+      <div class="form-group"><label>Nombre</label><input type="text" class="ex-name-inp" list="exerciseList" autocomplete="off" value="${esc(e.name)}" placeholder="Press banca"></div>
       <div class="form-group"><label>Grupo muscular</label>
         <select class="ex-group-inp">${MUSCLE_GROUPS.map(g => `<option ${e.group === g ? "selected" : ""}>${g}</option>`).join("")}</select>
       </div>
     </div>
+    <div class="last-session-hint" data-hint="${i}"></div>
     ${(e.sets || []).map((s, si) => `
       <div class="set-row">
         <span class="set-num">S${si + 1}</span>
@@ -518,6 +548,31 @@ function syncDraftFromForm() {
   });
   // PR segments necesitan listeners tras cada render
 }
+// Muestra "Última vez: ..." bajo el nombre del ejercicio, con opción de precargar
+function bindLastSessionHints() {
+  document.querySelectorAll(".exercise-block").forEach((block, i) => {
+    const inp = block.querySelector(".ex-name-inp");
+    const hint = block.querySelector(`.last-session-hint[data-hint="${i}"]`);
+    if (!inp || !hint) return;
+    const update = () => {
+      const last = lastSessionFor(inp.value);
+      if (!last) { hint.classList.remove("show"); hint.innerHTML = ""; return; }
+      const setsStr = last.sets.map(s => `${s.weight}×${s.reps}`).join(" · ");
+      hint.innerHTML = `<span class="hint-txt">Última vez (${fmtDate(last.date)}): <strong>${setsStr}</strong>${last.rpe ? ` · RPE ${last.rpe}` : ""}</span>
+        <button type="button" class="hint-use">Usar</button>`;
+      hint.classList.add("show");
+      hint.querySelector(".hint-use").addEventListener("click", () => {
+        syncDraftFromForm();
+        window.__draft.exercises[i].sets = last.sets.map(s => ({ weight: s.weight, reps: s.reps }));
+        renderWorkoutForm(); bindPrSegments(); bindLastSessionHints();
+      });
+    };
+    inp.addEventListener("input", update);
+    inp.addEventListener("change", update);
+    if (inp.value) update();
+  });
+}
+
 function bindPrSegments() {
   document.querySelectorAll(".ex-pr-seg").forEach((seg, i) => {
     seg.addEventListener("click", ev => {
@@ -528,10 +583,10 @@ function bindPrSegments() {
     });
   });
 }
-function draftAddExercise() { syncDraftFromForm(); window.__draft.exercises.push(blankExercise()); renderWorkoutForm(); bindPrSegments(); }
-function draftRemoveExercise(i) { syncDraftFromForm(); window.__draft.exercises.splice(i, 1); if (!window.__draft.exercises.length) window.__draft.exercises.push(blankExercise()); renderWorkoutForm(); bindPrSegments(); }
-function draftAddSet(i) { syncDraftFromForm(); window.__draft.exercises[i].sets.push({ weight: "", reps: "" }); renderWorkoutForm(); bindPrSegments(); }
-function draftRemoveSet(i, si) { syncDraftFromForm(); const s = window.__draft.exercises[i].sets; s.splice(si, 1); if (!s.length) s.push({ weight: "", reps: "" }); renderWorkoutForm(); bindPrSegments(); }
+function draftAddExercise() { syncDraftFromForm(); window.__draft.exercises.push(blankExercise()); renderWorkoutForm(); bindPrSegments(); bindLastSessionHints(); }
+function draftRemoveExercise(i) { syncDraftFromForm(); window.__draft.exercises.splice(i, 1); if (!window.__draft.exercises.length) window.__draft.exercises.push(blankExercise()); renderWorkoutForm(); bindPrSegments(); bindLastSessionHints(); }
+function draftAddSet(i) { syncDraftFromForm(); window.__draft.exercises[i].sets.push({ weight: "", reps: "" }); renderWorkoutForm(); bindPrSegments(); bindLastSessionHints(); }
+function draftRemoveSet(i, si) { syncDraftFromForm(); const s = window.__draft.exercises[i].sets; s.splice(si, 1); if (!s.length) s.push({ weight: "", reps: "" }); renderWorkoutForm(); bindPrSegments(); bindLastSessionHints(); }
 
 function saveWorkout() {
   syncDraftFromForm();
@@ -989,8 +1044,9 @@ function openModal(html) {
   overlay.classList.add("open");
   overlay.style.display = "grid";
   document.body.style.overflow = "hidden";
-  // Vincular segmentos de PR de gym si existen
+  // Vincular controles dinámicos del formulario de gym si existen
   bindPrSegments();
+  bindLastSessionHints();
 }
 function closeModal() {
   const overlay = document.getElementById("modalOverlay");
