@@ -15,7 +15,7 @@
 /* ---------------- Personalización ---------------- */
 // Cambia estos valores para personalizar la app
 const APP_USER = "María Fernanda";
-const APP_USER_SHORT = "Mafe";
+const APP_USER_SHORT = "Mafer";
 function greeting() {
   const h = new Date().getHours();
   const g = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
@@ -291,7 +291,7 @@ function renderDashboard() {
           <div class="record-date">${fmtDate(r.date)}</div></div>
           <span class="pill ${r.t === "gym" ? "blue" : "green"}">${r.t === "gym" ? "Gym" : "Running"}</span>
         </div>
-      </div>`).join("") : `<div class="empty-state">Todavía no hay registros este mes, Mafe. Tu primer entrenamiento te espera ✦</div>`}
+      </div>`).join("") : `<div class="empty-state">Todavía no hay registros este mes, ${APP_USER_SHORT}. Tu primer entrenamiento te espera ✦</div>`}
   `;
 }
 function statCard(icon, val, lbl) {
@@ -959,7 +959,7 @@ function downloadFile(name, content, type) {
 }
 function exportMonthJSON() {
   const d = keyToDate(currentKey);
-  const name = `fitness-log-mafe-${MONTH_NAMES[d.getMonth()].toLowerCase()}-${d.getFullYear()}.json`;
+  const name = `fitness-log-mafer-${MONTH_NAMES[d.getMonth()].toLowerCase()}-${d.getFullYear()}.json`;
   downloadFile(name, JSON.stringify(monthExportPayload(), null, 2), "application/json");
   toast("JSON exportado");
 }
