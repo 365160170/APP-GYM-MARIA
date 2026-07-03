@@ -67,6 +67,7 @@ textarea { resize: vertical; min-height: 70px; }
 .header-inner { max-width: 920px; margin: 0 auto; padding: 16px 18px 12px; }
 .header-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .app-title { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.03em; }
+.app-greeting { font-size: .78rem; color: var(--text-2); font-weight: 500; margin-top: 1px; }
 .month-selector {
   display: flex; align-items: center; gap: 4px;
   background: rgba(255,255,255,0.75);
@@ -265,6 +266,19 @@ textarea { resize: vertical; min-height: 70px; }
 .form-group label { display: block; font-size: .8rem; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.form-row > *, .form-row-3 > *, .set-row > * { min-width: 0; }
+/* Inputs de fecha en iOS: quitar apariencia nativa que fuerza ancho/alto propios */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  width: 100%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+input[type="number"], select { height: 46px; }
 .segmented { display: flex; background: #ECECF0; border-radius: 12px; padding: 3px; gap: 3px; }
 .segmented button {
   flex: 1; padding: 8px 4px; border-radius: 9px;

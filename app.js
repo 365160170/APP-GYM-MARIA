@@ -12,6 +12,16 @@
 
 "use strict";
 
+/* ---------------- Personalización ---------------- */
+// Cambia estos valores para personalizar la app
+const APP_USER = "María Fernanda";
+const APP_USER_SHORT = "Mafe";
+function greeting() {
+  const h = new Date().getHours();
+  const g = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  return `${g}, ${APP_USER_SHORT} ✦`;
+}
+
 /* ---------------- Constantes ---------------- */
 const STORAGE_KEY = "fitnessLog";
 const MONTH_NAMES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -178,6 +188,8 @@ function goalProgress(goal, m) {
 /* ---------------- Render principal ---------------- */
 function renderAll() {
   document.getElementById("monthLabel").textContent = monthLabel(currentKey);
+  const g = document.getElementById("appGreeting");
+  if (g) g.textContent = greeting();
   renderHeaderSummary();
   renderView(currentView);
 }
@@ -256,7 +268,7 @@ function renderDashboard() {
           <div class="record-date">${fmtDate(r.date)}</div></div>
           <span class="pill ${r.t === "gym" ? "blue" : "green"}">${r.t === "gym" ? "Gym" : "Running"}</span>
         </div>
-      </div>`).join("") : `<div class="empty-state">Todavía no hay registros este mes. Empieza en Gym o Running.</div>`}
+      </div>`).join("") : `<div class="empty-state">Todavía no hay registros este mes, Mafe. Tu primer entrenamiento te espera ✦</div>`}
   `;
 }
 function statCard(icon, val, lbl) {
@@ -543,7 +555,7 @@ function saveWorkout() {
   saveDB(); closeModal();
   if (targetKey !== currentKey) { currentKey = targetKey; }
   renderAll();
-  toast(window.__editingGym ? "Entrenamiento actualizado" : "Entrenamiento guardado");
+  toast(window.__editingGym ? "Entrenamiento actualizado" : `Entrenamiento guardado. ¡Bien hecho, ${APP_USER_SHORT}!`);
 }
 
 /* ---------------- RUNNING ---------------- */
@@ -660,7 +672,7 @@ function openRunModal(editId = null) {
     saveDB(); closeModal();
     if (targetKey !== currentKey) currentKey = targetKey;
     renderAll();
-    toast(r ? "Carrera actualizada" : "Carrera guardada");
+    toast(r ? "Carrera actualizada" : `Carrera guardada. ¡Sigue así, ${APP_USER_SHORT}!`);
   });
 }
 
@@ -851,7 +863,7 @@ function renderSettings() {
         <button class="btn btn-danger" onclick="startDeleteFlow()">Borrar datos del mes</button>
       </div>
     </div>
-    <p style="text-align:center;color:var(--text-2);font-size:.75rem;margin-top:8px">Fitness Log v1.0 · Datos guardados localmente en tu navegador</p>
+    <p style="text-align:center;color:var(--text-2);font-size:.75rem;margin-top:8px">Fitness Log · Hecha para María Fernanda ✦ · Datos guardados localmente en tu navegador</p>
   `;
   document.getElementById("importFile").addEventListener("change", importJSON);
 }
@@ -892,7 +904,7 @@ function downloadFile(name, content, type) {
 }
 function exportMonthJSON() {
   const d = keyToDate(currentKey);
-  const name = `fitness-log-${MONTH_NAMES[d.getMonth()].toLowerCase()}-${d.getFullYear()}.json`;
+  const name = `fitness-log-mafe-${MONTH_NAMES[d.getMonth()].toLowerCase()}-${d.getFullYear()}.json`;
   downloadFile(name, JSON.stringify(monthExportPayload(), null, 2), "application/json");
   toast("JSON exportado");
 }
