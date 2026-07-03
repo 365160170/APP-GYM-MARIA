@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#F5F5F7">
 <title>Fitness Log</title>
-<link rel="stylesheet" href="styles.css">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
 
@@ -45,15 +48,15 @@
 </nav>
 
 <!-- ============ MODALES ============ -->
-<div class="modal-overlay" id="modalOverlay" hidden>
+<div class="modal-overlay" id="modalOverlay" style="display:none">
   <div class="modal" id="modalBox" role="dialog" aria-modal="true">
     <!-- Render dinámico -->
   </div>
 </div>
 
 <!-- ============ TOAST ============ -->
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" style="display:none"></div>
 
-<script src="app.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

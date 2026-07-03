@@ -363,7 +363,10 @@ function duplicateWorkout(id) {
   const copy = JSON.parse(JSON.stringify(src));
   copy.id = uid(); copy.date = todayISO(); copy.createdAt = nowISO(); copy.updatedAt = nowISO();
   copy.exercises.forEach(e => { e.id = uid(); e.pr = false; });
-  m.gym.push(copy); saveDB(); renderAll();
+  m.gym.push(copy); saveDB(); // Garantía: modal y toast siempre cerrados al iniciar
+closeModal();
+document.getElementById("toast").style.display = "none";
+renderAll();
   toast("Entrenamiento duplicado con fecha de hoy");
 }
 
@@ -971,13 +974,16 @@ function deleteStep2() {
 function openModal(html) {
   const overlay = document.getElementById("modalOverlay");
   document.getElementById("modalBox").innerHTML = html;
-  overlay.hidden = false;
+  overlay.classList.add("open");
+  overlay.style.display = "grid";
   document.body.style.overflow = "hidden";
   // Vincular segmentos de PR de gym si existen
   bindPrSegments();
 }
 function closeModal() {
-  document.getElementById("modalOverlay").hidden = true;
+  const overlay = document.getElementById("modalOverlay");
+  overlay.classList.remove("open");
+  overlay.style.display = "none";
   document.body.style.overflow = "";
 }
 function confirmModal(title, msg, onConfirm) {
@@ -995,9 +1001,10 @@ let toastTimer;
 function toast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
-  t.hidden = false;
+  t.classList.add("open");
+  t.style.display = "block";
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.hidden = true; }, 2400);
+  toastTimer = setTimeout(() => { t.classList.remove("open"); t.style.display = "none"; }, 2400);
 }
 
 /* ---------------- Inicialización ---------------- */
